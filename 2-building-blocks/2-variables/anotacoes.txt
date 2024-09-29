@@ -1,0 +1,29 @@
+* Elixir não é fortemente tipado.
+Não se declara o tipo de variável.
+Ele á assumido de acordo com o valor atribuido.
+
+iex(1)> salario = 7000
+7000
+
+iex(2)> salario
+7000
+
+iex(3)> salario * 12
+84000
+
+
+* convenção para nomes de variáveis:
+nome_da_variavel_1
+is_valid?
+final_alert!
+
+
+* Reatribuição de valores em variáveis:
+iex(1)> salario = 7000
+7000
+iex(2)> salario
+7000
+iex(3)> salario = 10000
+10000
+iex(4)> salario
+10000

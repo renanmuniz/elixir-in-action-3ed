@@ -1,0 +1,75 @@
+To install Elixir on Fedora Linux using `asdf`, follow these steps:
+
+### 1. Install Required Dependencies
+First, ensure you have the necessary dependencies for building Elixir and Erlang (since Elixir runs on the Erlang VM).
+
+```bash
+sudo dnf install git curl autoconf gcc glibc-devel ncurses-devel openssl-devel wxBase wxGTK3-devel fop java-11-openjdk-devel
+```
+
+### 2. Install `asdf`
+If you don’t already have `asdf` installed, follow these steps:
+
+1. Clone the `asdf` repository:
+
+   ```bash
+   git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.12.0
+   ```
+
+2. Add `asdf` to your shell configuration:
+
+   For **Bash**:
+   ```bash
+   echo -e '\n. $HOME/.asdf/asdf.sh' >> ~/.bashrc
+   echo -e '\n. $HOME/.asdf/completions/asdf.bash' >> ~/.bashrc
+   ```
+
+   For **Zsh**:
+   ```bash
+   echo -e '\n. $HOME/.asdf/asdf.sh' >> ~/.zshrc
+   echo -e '\n. $HOME/.asdf/completions/asdf.bash' >> ~/.zshrc
+   ```
+
+   Then, restart your terminal or source the file:
+   ```bash
+   source ~/.bashrc  # or source ~/.zshrc
+   ```
+
+### 3. Install `asdf` Erlang Plugin
+Elixir requires Erlang, so you need to install the Erlang plugin first.
+
+```bash
+asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git
+```
+
+Then, install Erlang:
+
+```bash
+asdf install erlang latest
+asdf global erlang latest
+```
+
+### 4. Install `asdf` Elixir Plugin
+Next, install the Elixir plugin:
+
+```bash
+asdf plugin add elixir https://github.com/asdf-vm/asdf-elixir.git
+```
+
+Then, install Elixir:
+
+```bash
+asdf install elixir latest
+asdf global elixir latest
+```
+
+### 5. Verify Installation
+To verify that Elixir is installed correctly, run:
+
+```bash
+elixir -v
+```
+
+This should display the version of Elixir installed, confirming that everything is set up.
+
+Now you should have Elixir installed on Fedora Linux using `asdf`.

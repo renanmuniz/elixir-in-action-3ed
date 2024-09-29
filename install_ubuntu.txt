@@ -1,0 +1,61 @@
+To install Elixir on Ubuntu using `asdf`, follow these steps:
+
+### Step 1: Install Dependencies
+You need some dependencies before you can install `asdf` and Elixir.
+
+Open a terminal and run:
+```bash
+sudo apt update
+sudo apt install curl git autoconf build-essential
+```
+
+### Step 2: Install `asdf`
+1. **Clone the `asdf` repository**:
+   ```bash
+   git clone https://github.com/asdf-vm/asdf.git ~/.asdf --branch v0.13.1
+   ```
+2. **Add `asdf` to your shell**:
+   For Bash:
+   ```bash
+   echo -e '\n. $HOME/.asdf/asdf.sh' >> ~/.bashrc
+   echo -e '\n. $HOME/.asdf/completions/asdf.bash' >> ~/.bashrc
+   source ~/.bashrc
+   ```
+
+   For Zsh:
+   ```bash
+   echo -e '\n. $HOME/.asdf/asdf.sh' >> ~/.zshrc
+   echo -e '\n. $HOME/.asdf/completions/asdf.bash' >> ~/.zshrc
+   source ~/.zshrc
+   ```
+
+### Step 3: Install `asdf-erlang` and `asdf-elixir` plugins
+1. **Install the Erlang plugin**:
+   ```bash
+   asdf plugin add erlang https://github.com/asdf-vm/asdf-erlang.git
+   ```
+2. **Install the Elixir plugin**:
+   ```bash
+   asdf plugin add elixir https://github.com/asdf-vm/asdf-elixir.git
+   ```
+
+### Step 4: Install Erlang and Elixir
+1. **Install Erlang** (Erlang is a prerequisite for Elixir):
+   ```bash
+   asdf install erlang latest
+   asdf global erlang latest
+   ```
+2. **Install Elixir**:
+   ```bash
+   asdf install elixir latest
+   asdf global elixir latest
+   ```
+
+### Step 5: Verify Installation
+Run the following commands to verify that Elixir and Erlang are properly installed:
+```bash
+elixir -v
+erl -version
+```
+
+You should see the versions of Elixir and Erlang displayed.

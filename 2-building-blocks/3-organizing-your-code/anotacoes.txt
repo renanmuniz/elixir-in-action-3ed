@@ -1,0 +1,273 @@
+* Elixir se baseia em funções
+
+* Dada a natureza imutavel dos dados, um programa elixir consiste em várias pequenas funções
+
+* Essas funções organizadas em modulos.
+
+* Um módulo é uma coleção de funções, um 'namespace'.
+Cada função em elixir deve ser definida em um módulo.
+Sintaxe: ModuleName.function_name(args)
+
+* A linguagem vem com suas biblioteca padrão com módulos definidos.
+Ex.:
+Módulo IO (input/output)
+
+iex(1)> IO.puts("Hello World!")
+Hello World!
+:ok
+
+* Definindo um módulo:
+defmodule Geometry do
+    def rectangle_area(a,b) do
+        a * b
+    end
+end
+
+iex(3)> Geometry.rectangle_area(4,5)
+20
+
+* Acima fizemos um teste direto no iex, mas podemos colocar em um arquivo com a extensão .ex e carregar no iex:
+- Criei o arquivo geometry.ex com as seguintes funções:
+
+defmodule Geometry do
+  def rectangle_area(a,b) do
+      a * b
+  end
+
+  def square_area(l) do
+    l * l
+  end
+end
+
+- Carreguei no iex:
+...3-organizing-your-code$ iex geometry.ex
+
+- Executei a função:
+iex(1)> Geometry.square_area(10)
+100
+
+Obs.: um arquivo pode conter a definição de vários módulos com suas funções.
+
+Nome de módulos devem iniciar com letra Maiúsucla e depois seguir CamelCase
+
+* Hierarquia de módulos podem ser obtidas usando pont(.)
+
+Pode-se criar tanto assim:
+arquivo: geometry.ex
+defmodule Geometry.Rectangle do
+    ...
+end
+defmodule Geometry.Circle do
+    ...
+end
+
+quanto assim:
+defmodule Geometry do
+    defmodule Rectangle do
+        ...
+    end
+    defmodule Square do
+        ...
+    end
+end
+
+arquivo: geometry_nested.ex:
+defmodule GeometryNested do
+  
+  defmodule Rectangle do
+    def area(a,b) do
+      a * b
+    end
+
+    def perimeter(a,b) do
+      2 * (a + b)
+    end
+  end
+
+  defmodule Square do
+    def area(l) do
+      l * l
+    end
+
+    def perimeter(l) do
+      4 * l
+    end
+  end
+
+end
+
+
+iex(1)> GeometryNested.Rectangle.area(4,5)
+20
+iex(2)> GeometryNested.Square.perimeter(6)
+24
+
+
+Para fins de organização de projeto, toda definição de modulo define primeiro o nome do projeto e depois o nome do modulo desejado:
+Projeto: credit_card
+
+defmodule CreditCard do
+  defmodule Calculations do
+      defmodule Tax do
+        def calculate do
+          IO.puts("Calculating tax!")
+        end
+      end
+
+      defmodule Interests do
+        def calculate() do
+          IO.puts("Calculating Interests!")
+        end
+
+        def set() do
+          IO.puts("Setting Interests!")
+        end
+
+        def update() do
+          IO.puts("Updating Interests!")
+        end
+      end
+  end
+end
+
+iex(1)> CreditCard.Calculations.Tax.calculate
+Calculating tax!
+:ok
+
+iex(2)> CreditCard.Calculations.Interests.update
+Updating Interests!
+:ok
+
+
+* Funções
+
+- Funções seguem o mesmo padrão de nomenclatura de variaveis:
+começar minúsculo e usam _ e números.
+Pode usar também ? e !
+
+- O caractere ? é convencionado para retorno true/false
+
+- O caractere ! é convencionado para funções que podem causar algum erro (ex.: leitura de arquivo)
+
+- Para definir uma função usamos a macro 'def'
+
+defmodule Geometry do
+    def rectangle_area(a, b) do
+        ... 
+    end
+end
+
+- Funções sem argumentos podemos omitir os parênteses.
+defmodule Program do
+    def run do
+        ...
+    end
+end
+
+* RETORNO DE FUNÇÕES
+- O retorno de fuma função sempre será sua ultima instrução
+
+def rectangle_area(a,b) do
+      a * b
+end
+
+* Funções com o corpo condensado:
+QUando a função tem apenas uma linha podemos declará-la assim:
+
+defmodule Geometry do
+    def rectangle_area(a, b), do: a * b
+end
+
+* Resultado podem ser armazenados em variáveis:
+iex(2)> area = Geometry.rectangle_area(3, 2)
+6
+
+iex(3)> area
+6
+
+* Parênteses são opcionais:
+iex(4)> Geometry.rectangle_area 3, 2
+6
+
+Mas é uma boa pratica utilizá-los.
+
+* Funções que são chamadas dentro do próprio módulo podemos omitir o nome do módulo:
+defmodule Geometry do
+    def rectangle_area(a, b) do
+        a * b
+    end
+
+    def square_area(a) do
+        rectangle_area(a, a)
+    end
+end
+
+
+* PIPE operator |>
+Serve para encadear as chamadas de funções, passando o resultado da anterior como 1o parametro para a seguinte.
+
+Ex.:
+iex(1)> -5 |> abs() |> Integer.to_string() |> IO.puts()
+5
+:ok
+
+que é igual a isso:
+IO.puts(Integer.to_string(abs(-5)))
+
+Util para melhorar a legibilidade em casos de muitas chamadas encadeadas
+
+
+
+* Aridade de funções
+Aridade é a quantidade de parâmetros da função.
+Ex.:
+sum(a,b) arity = 2
+
+Vendo a definição de uma função, seja na doc ou usando 'h', a aridade aparece depois de '/'
+Ex.:
+sum/2
+
+Funções com mesmo nome mas diferentes aridades são consideradas diferentes funções(Equivalente a sobrecarga de métodos do Java).
+
+
+
+* Valor default para parametros de função:
+Dá para setar valores padrão para quando não são informados usando \\ após o parâmetro desejado.
+Ex.:
+defmodule Calculator do
+
+  def add(a, b \\ 0) do
+    a + b
+  end
+
+end
+
+iex(1)> Calculator.add(2,3)
+5
+iex(2)> Calculator.add(2)
+2
+
+Passando śo 1 argumento, o que não foi informado assume o valor default (b = 0)
+Por trás dos panos, o elixir cria uma função para cada aridade daí.
+iex(3)> Calculator.add
+add/1    add/2
+
+
+
+
+* Visibilidade de funções
+A macro 'def' usada até agora define funções públicas(chamadas de 'exported' no Elixir). Que podem ser chamadas por qualquer outro modulo.
+
+A macro 'defp' define funções privadas, que só podem ser chamadas de dentro do modulo que foramd definidas.
+
+defmodule Salario do
+
+  def salario_liquido(valor) do
+    IO.puts("Salário líquido é R$#{calcular_salario_liquido(valor)}")
+  end
+
+  defp calcular_salario_liquido(valor) do
+    valor - (valor * 0.25)
+  end
+
+end
