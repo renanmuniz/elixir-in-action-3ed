@@ -533,3 +533,293 @@ Para maiores agrupamentos e de tamanho dinamico usamos listas.
 
 
 2.4.4 Lists
+* Usadas para grande volume de dados e de tamanho variavel.
+
+Sintaxe:
+prime_numbers = [2, 3, 5, 7]
+
+* Listas são tratadas não como arrays, mas como linked lists.
+Portanto possui complexidade o(n)
+Até mesmo a função length, precisa percorre-lo todo para saber o tamanho.
+
+iex(1)> prime_numbers = [2, 3, 5, 7]
+[2, 3, 5, 7]
+iex(2)> length(prime_numbers)
+4
+
+* Recuperar um elemento da lista:
+Enum.at/2  (índice começa em 0)
+
+iex(3)> Enum.at(prime_numbers, 3)
+7
+
+Lembrando da complexidade O(n) de acesso a elementos de listas(que sao linked lists) não é recomendado
+seu uso para acesso direto a elementos. Nesses casos prefira tuplas, maps ou outro tipo de estrutura de dados.
+
+* Ver se um dado elemento está na lista:
+iex(4)> 5 in prime_numbers
+true
+iex(5)> 99 in prime_numbers
+false
+
+
+* Manipular listas:
+List.replace_at/3
+Sendo os parâmetros, respectivamente a lista, a posição e o novo valor.
+iex(6)> List.replace_at(prime_numbers, 0, 11)
+[11, 3, 5, 7]
+
+*** Lembrando da imutabilidade!
+iex(2)> prime_numbers = [2, 3, 5, 7]
+[2, 3, 5, 7]
+
+iex(3)> Enum.at(prime_numbers, 0)
+2
+
+iex(4)> List.replace_at(prime_numbers, 0, 11)
+[11, 3, 5, 7]
+
+iex(5)> Enum.at(prime_numbers, 0)
+2
+
+iex(6)> new_primes = List.replace_at(prime_numbers, 0, 11)
+[11, 3, 5, 7]
+
+iex(7)> Enum.at(new_primes, 0)
+11
+
+
+Ou fazendo rebind:
+iex(8)> prime_numbers = List.replace_at(prime_numbers, 0, 11)
+[11, 3, 5, 7]
+
+iex(9)> Enum.at(prime_numbers, 0)
+11
+
+
+
+* Inserir elementos na lista:
+Inserir em indice especifico:
+List.insert_at/3
+Argumentos: lista, posicao, valor a inserir.
+
+iex(2)> List.insert_at(prime_numbers, 3, 13)
+[2, 3, 5, 13, 7]
+
+*** lembrando da imutabilidade:
+iex(1)> prime_numbers = [2, 3, 5, 7]
+[2, 3, 5, 7]
+iex(2)> List.insert_at(prime_numbers, 3, 13)
+[2, 3, 5, 13, 7]
+iex(3)> prime_numbers
+[2, 3, 5, 7]
+
+Se quer armazenar na mesma lista, fazer rebind. Senão, atribuir a nova variável.
+
+
+
+* Para inserir na posição final da lista, colocar índice negativo -1:
+iex(9)> List.insert_at(prime_numbers, -1, 13)
+[2, 3, 5, 7, 13]
+
+
+* Concatenar listas:
+iex(11)> [1, 2, 3] ++ [4, 5]
+[1, 2, 3, 4, 5]
+
+
+
+* Listas é uma estrutura composta por head e tail.
+Sendo head o primeiro elemento e tail os demais:
+iex(19)> hd([1, 2, 3, 4])
+1
+
+iex(20)> tl([1, 2, 3, 4])
+[2, 3, 4]
+
+
+As funções 'hd' e 'tl' retornar os respectivos valores para head e tail.
+
+
+*** Como inserir elementos ao final de uma lista é caro computacionalmente O(n)
+ou seja, precisar percorrer todos ate o final.
+Costuma-se adicionar elementos no inicio, no head da lista. Complexidade O(1).
+
+Ex.:
+iex(23)> list = [1,2,3,4,5]
+[1, 2, 3, 4, 5]
+
+iex(24)> new_list = [0 | list]
+[0, 1, 2, 3, 4, 5]
+
+
+***
+E se busca inserir os elementos na ordem e quer evitar a complexidade O(n)?
+Se a ordem é absolutamente necessária e a performance importa, usar uma estrutura como :gb_trees ou :queue é a melhor opção. 
+Porém, se as inserções são raras e a leitura ordenada for o foco, reverter ou ordenar uma lista com Enum.reverse/1 ou Enum.sort/1 pode ser suficiente.
+
+
+
+
+* 2.4.6 Maps
+Estrutura de armazenamento chave-valor
+
+* Sintaxe
+empty_map = %{}
+
+squares = %{1 => 1, 2 => 4, 3 => 9}
+ou
+squares = Map.new([{1, 1}, {2, 4}, {3, 9}])
+
+* Para recuperar um valor de um mapa passamos o nome do mapa e a chave entre parêntesis:
+
+iex(9)> meu_map = Map.new([{"a",1},{"b",2},{"c",3}])
+%{"a" => 1, "b" => 2, "c" => 3}
+
+iex(10)> meu_map["b"]
+2
+iex(11)> meu_map["c"]
+3
+iex(12)> meu_map["d"]
+nil
+
+* Também podemos recupear usando a função Map.get/2:
+Map.get(nome_do_map, chave)
+
+iex(14)> Map.get(meu_map, "a")
+1
+iex(15)> Map.get(meu_map, "b")
+2
+iex(16)> Map.get(meu_map, "c")
+3
+iex(17)> Map.get(meu_map, "d")
+nil
+
+* Caso queira retornar um valor default em caso de não encontrar a chave usamos a Map.get/3:
+iex(18)> Map.get(meu_map, "a", 0)
+1
+iex(19)> Map.get(meu_map, "d", 0)
+0
+iex(20)> Map.get(meu_map, "d", :not_found)
+:not_found
+
+
+* Uma forma melhor de recuperar é usando o Map.fetch/2
+Sintaxe: Map.fetch(nome_do_map, chave)
+
+iex(21)> Map.fetch(meu_map,"a")
+{:ok, 1}
+iex(22)> Map.fetch(meu_map,"d")
+:error
+
+Como visto, ele retorna um atom sinalizando o sucesso ou erro na recupeação do valor.
+
+* Caso queria retornar uma exceção se não encontrar a chave:
+iex(23)> Map.fetch!(meu_map,"a")
+1
+iex(24)> Map.fetch!(meu_map,"d")
+** (KeyError) key "d" not found in: %{"a" => 1, "b" => 2, "c" => 3}
+    (stdlib 6.1) :maps.get("d", %{"a" => 1, "b" => 2, "c" => 3})
+    iex:24: (file)
+
+
+
+* Adicionar um elemento ao mapa:
+Map.put/3
+Map.put(mapa, chave, valor)
+
+iex(24)> Map.put(meu_map,"d",4)
+%{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
+
+
+*** lembrando da imutabilidade:
+iex(25)> Map.fetch!(meu_map,"d")
+** (KeyError) key "d" not found in: %{"a" => 1, "b" => 2, "c" => 3}
+    (stdlib 6.1) :maps.get("d", %{"a" => 1, "b" => 2, "c" => 3})
+    iex:25: (file)
+
+então devemos fazer o rebind caso desejemos que persista esse valor.
+meu_mapa = Map.put(meu_map,"d",4)
+
+iex(27)> meu_map = Map.put(meu_map,"d",4)
+%{"a" => 1, "b" => 2, "c" => 3, "d" => 4}
+iex(28)> Map.fetch!(meu_map,"d")
+4
+
+
+* Deletar uma entrada do map:
+Map.delete/2
+Map.delete(nome_do_mapa, chave)
+
+iex(29)> Map.delete(meu_map, "a")
+%{"b" => 2, "c" => 3, "d" => 4}
+
+
+* Atualizar um valor de uma chave do map de acordo com a função passada:
+Map.update/4
+Map.update(map, key, default, fun)
+
+iex(31)> Map.update(meu_map, "a", 0, fn value -> value * 10 end)
+%{"a" => 10, "b" => 2, "c" => 3, "d" => 4}
+
+* STRUCTURED DATA
+
+Mapas podem ser usados para agrupar valores, como as tuplas, mas com a vantagem de podermos acessar
+seus valores com base nas chaves:
+Ex.:
+bob = %{:name => "Bob", :age => 25, :works_at => "Initech"}
+ou
+bob = %{name: "Bob", age: 25, works_at: "Initech"}
+
+Para recuperar:
+iex(36)> bob[:works_at]
+"Initech"
+
+iex(37)> bob[:non_existent_field]
+nil
+
+iex(38)> Map.fetch(bob,:birth_date)
+:error
+
+Ou ainda, apenas usar:
+iex(39)> bob.age
+25
+iex(40)> bob.works_at
+"Initech"
+
+
+* Alterar valor em um mapa:
+novo_mapa = %{nome_do_mapa | chave: valor}
+
+iex(44)> new_bob = %{bob | age: 34}
+%{name: "Bob", age: 34, works_at: "Initech"}
+
+iex(45)> new_bob.age
+34
+
+imutabilidade:
+iex(46)> bob.age
+25
+
+
+
+
+2.4.7 Binaries and bitstrings
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
