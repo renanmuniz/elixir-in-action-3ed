@@ -804,19 +804,284 @@ iex(46)> bob.age
 
 
 
-2.4.7 Binaries and bitstrings
+2.4.8 Strings
+
+String são sequencias de bits.
+
+*Declaramos string usando aspas duplas: 
+"This is a string"
+
+*String expressions:
+iex(1)> "Soma de 2 + 2 é #{2+2}"
+"Soma de 2 + 2 é 4"
+
+
+*Caracteres de escape também funcionam:
+"\r \n \" \\"
+
+iex(2)> "String
+...(2)> de multiplas
+...(2)> linhas"
+"String\nde multiplas\nlinhas"
+
+
+iex(3)> ~s(Outra forma de declara strings!)
+"Outra forma de declara strings!"
+
+
+iex(4)> ~s(Vantagem de usar assim é poder usar "aspas" sem fazer escape)
+"Vantagem de usar assim é poder usar \"aspas\" sem fazer escape"
+
+
+Com S maíusculo não permite avaliar expressões dentro da string:
+iex(6)> ~S(Essa forma nao permite avaliar expressoes. Ex. #{2 + 2})
+"Essa forma nao permite avaliar expressoes. Ex. \#{2 + 2}"
+
+iex(7)> ~s(Essa forma permite avaliar expressoes. Ex. #{2 + 2})
+"Essa forma permite avaliar expressoes. Ex. 4"
+
+
+iex(11)> "Assim que concatenamos" <> " " <> "as string!"
+"Assim que concatenamos as string!"
+
+
+* No String module temos várias funções utilitárias para utlizarmos com Strings.
+
+
+CHARACTER LISTS
+
+Lista na qual cada caractere é representado pelo seu inteiro
+iex(12)> IO.puts([65, 66, 67])
+ABC
+
+
+Pode ser criado usando o sigil ~c""
+iex(13)> IO.puts(~c"ABC")
+ABC
+
+iex(14)> [65, 66, 67]
+~c"ABC"
+
+
+!!! detalhe !!!
+Ao imprimir no console ou inspecionar listas de inteiro que tenham valores que coincidam com a tabela ASCII
+serão imprimidos seus respectivos caracteres.
+Ex.:
+iex(19)> integer_list = [63,64,65]
+~c"?@A"
+
+iex(24)> Enum.each(integer_list, &IO.puts(&1))
+61
+62
+63
+64
+65
+
+
+
+2.4.9 First-class functions
+
+Funções em elixir são cidadas de 1a classe. Ou seja, podem ser atribuidas a uma variavel.
+Não o seu resultado, mas a função em si.
+
+Ex.:
+iex(1)> quadrado = fn x -> x * x end
+#Function<42.39164016/1 in :erl_eval.expr/6>
+
+iex(2)> quadrado.(2)
+4
+
+A diferença de executar uma função declarada em um módulo:
+square(5)
+
+e uma função anonima atribuida a uma variavel:
+square.(5)
+
+Essa diferença é para sabermos se estamos chamando uma função anonima ou declarada.
+
+Sendo atribuidas a uma variavel, podemos passa-las como parametro para outra funcao.
+Ex.:
+iex(2)> print_element = fn x -> IO.puts(x) end
+
+iex(3)> Enum.each([1,2,3], print_element)
+1
+2
+3
+:ok
+
+
+Pode passar direto tbm a função:
+iex(4)> Enum.each([1,2,3], fn x -> IO.puts(x) end)
+1
+2
+3
+:ok
+
+
+Lambdas podem ser escritas de uma forma mais resumida:
+&IO.puts/1
+
+iex(5)> Enum.each([1,2,3], &IO.puts/1)
+1
+2
+3
+:ok
+
+
+ao invés de:
+operacao = fn x,y,x -> x * y + z end
+
+pode fazer:
+operacao = &(&1 * &2 + &3)
+
+iex(7)> operacao.(2,3,4)
+10
 
 
 
 
+2.4.11 Higher-level types
+Range, Keyword, MapSet, Date, Time, NaiveDateTime, and DateTime
 
 
+* RANGE:
+iex(1)> range = 1..10
+1..10
+
+iex(2)> 5 in range
+true
+
+iex(3)> 11 in range
+false
+
+iex(4)> Enum.each(1..10, &IO.puts/1)
+1
+2
+3
+4
+5
+6
+7
+8
+9
+10
+:ok
 
 
+* KEYWORD:
+Uma lista de keyword é um tipo especial de lista em que cada elemento é uma dupla de dois elementos e o 
+primeiro elemento pode ser um atom.
+
+iex(5)> days = [{:monday, 1}, {:tuesday, 2}, {:wednesday,3}]
+[monday: 1, tuesday: 2, wednesday: 3]
+
+Forma mais compacta e mais utilizada:
+iex(6)> days = [monday: 1, tuesday: 2, wednesday: 3]
+[monday: 1, tuesday: 2, wednesday: 3]
 
 
+Recuperar o valor de uma keyword list:
+iex(7)> Keyword.get(days, :monday)
+1
+iex(8)> Keyword.get(days, :friday)
+nil
+
+Pode usar assim também:
+iex(9)> days[:tuesday]
+2
 
 
+* MapSet
+É um set (não armazena valores repetidos)
+
+iex(11)> days = MapSet.new([:monday, :tuesday, :wednesday])
+MapSet.new([:monday, :tuesday, :wednesday])
+
+iex(12)> MapSet.member?(days, :monday)
+true
+
+iex(13)> MapSet.member?(days, :friday)
+false
+
+iex(14)> days = MapSet.put(days, :thursday)
+MapSet.new([:monday, :tuesday, :wednesday, :thursday])
+
+iex(15)> days = MapSet.put(days, :thursday)
+MapSet.new([:monday, :tuesday, :wednesday, :thursday])
+
+iex(16)> Enum.each(days, &IO.puts/1)
+monday
+tuesday
+wednesday
+thursday
+:ok
+
+
+* TIMES AND DATES
+Date, Time, DateTime, and NaiveDateTime
+
+iex(17)> today = ~D[2024-10-23]
+~D[2024-10-23]
+
+iex(18)> today.year
+2024
+
+iex(19)> today.month
+10
+
+iex(20)> today.day
+23
+
+
+iex(21)> time = ~T[11:59:12.00007]
+~T[11:59:12.00007]
+
+iex(22)> time.hour
+11
+
+iex(23)> time.minute
+59
+
+iex(24)> time.second
+12
+
+iex(25)> time.microsecond
+{70, 5}
+
+
+iex(27)> naive_datetime = ~N[2023-01-31 11:59:12.000007]
+~N[2023-01-31 11:59:12.000007]
+
+iex(28)> naive_datetime.day
+31
+
+iex(29)> naive_datetime.hour
+11
+
+iex(30)> naive_datetime.year
+2023
+
+iex(31)> naive_datetime.second
+12
+
+
+- DateTime
+Suporta timezones
+
+iex(1)> datetime = ~U[2023-01-31 11:59:12.000007Z]
+~U[2023-01-31 11:59:12.000007Z]
+
+iex(2)> datetime.year
+2023
+
+iex(3)> datetime.hour
+11
+
+iex(4)> datetime.time_zone
+"Etc/UTC"
+
+
+* 2.5 Operators
 
 
 
