@@ -1083,8 +1083,149 @@ iex(4)> datetime.time_zone
 
 * 2.5 Operators
 
+- arithmetic operators
++, -, *, /
+
+comparação forte:
+=== 
+!==
+
+comparação fraca:
+==,!=
+
+Ex.:
+iex(1)> 1 == 1.0
+true
+iex(2)> 1 === 1.0
+false
 
 
 
+Maior, menor, maior igual, menor igual
+<, >, >=, <=
+
+Ex.:
+iex(3)> 1 > 1.0
+false
+iex(4)> 1 >= 1.0
+true
 
 
+Operadores Lógicos:
+and, or, not
+&&   ||   !
+
+iex(6)> true and false
+false
+iex(7)> true && false
+false
+iex(8)> true or false
+true
+iex(9)> true || false
+true
+iex(10)> true and not false
+true
+iex(11)> true && !false
+true
+
+
+
+* 3 Control flow
+3.1 Pattern matching
+
+3.1.1 The match operator (=)
+
+O = é um match operator, ele que faz o link do atom(nome) ao valor.
+Ex.:
+person = {"Bob", 25}
+
+
+3.1.2 Matching tuples
+
+iex(1)> {name, age} = {"Bob", 25}
+{"Bob", 25}
+
+iex(2)> name
+"Bob"
+
+iex(3)> age
+25
+
+
+iex(4)> {date, time} = :calendar.local_time()
+{{2024, 10, 24}, {20, 30, 17}}
+
+iex(7)> {year, month, day} = date
+{2024, 10, 24}
+
+iex(8)> year
+2024
+
+iex(9)> month
+10
+
+iex(10)> day
+24
+
+
+Se os lados não se corresponderem um erro é lançado:
+iex(12)> {nome, idade, sexo} = {"jose", 30}
+
+** (MatchError) no match of right hand side value: {"jose", 30}
+    (stdlib 6.1) erl_eval.erl:652: :erl_eval.expr/6
+    iex:12: (file)
+
+iex(13)> pessoa = {"jose", 30}
+{"jose", 30}
+
+iex(14)> {nome, idade} = pessoa
+{"jose", 30}
+
+iex(15)> nome
+"jose"
+
+iex(16)> idade
+30
+
+
+3.1.3 Matching constants
+iex(19)> veiculo = {:carro, "VW", "gol"}
+{:carro, "VW", "gol"}
+
+iex(20)> {:carro, marca, modelo} = veiculo
+{:carro, "VW", "gol"}
+
+iex(21)> marca
+"VW"
+
+iex(22)> modelo
+"gol"
+
+
+
+iex(23)> {:moto, marca, modelo} = veiculo
+** (MatchError) no match of right hand side value: {:carro, "VW", "gol"}
+    (stdlib 6.1) erl_eval.erl:652: :erl_eval.expr/6
+    iex:23: (file)
+
+
+Isso é comum em operações que retornam uma constante de resultado da operação.
+Ex.: Ler um arquivo
+
+- Abaixo não deu match, pois esperava uma reposta :ok
+iex(23)> {:ok, contents} = File.read("teste.txt")
+** (MatchError) no match of right hand side value: {:error, :enoent}
+    (stdlib 6.1) erl_eval.erl:652: :erl_eval.expr/6
+    iex:23: (file)
+
+- Abaixo deu match, pois esperava uma resposta :error
+iex(23)> {:error, contents} = File.read("teste.txt")
+{:error, :enoent}
+
+
+- Criei um arquivo chamado "teste.txt" neste diretório com o conteúdo "conteudo do arquivo teste.txt".
+iex(1)> {:ok, contents} = File.read("teste.txt")
+{:ok, "conteudo do arquivo teste.txt"}
+
+
+3.1.4 Variables in patterns
