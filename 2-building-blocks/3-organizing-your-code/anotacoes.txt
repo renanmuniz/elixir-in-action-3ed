@@ -1229,3 +1229,310 @@ iex(1)> {:ok, contents} = File.read("teste.txt")
 
 
 3.1.4 Variables in patterns
+Quando não quiser um dado vindo do lado direito do match podemos usar o _ para ignorar:
+
+iex(1)> {_, time} = :calendar.local_time()
+{{2024, 10, 25}, {10, 53, 26}}
+
+iex(2)> time
+{10, 53, 26}
+
+iex(3)> {_,minute,_} = time
+{10, 53, 26}
+
+iex(4)> minute
+53
+
+Para deixar explicito o que está sendo ignorado pode usar _nome_da_variavel.
+Porém, ela poderá ser referenciada após essa atribuição.
+Mas o compilador irá gerar warning de que esse valor deveria ser ignorado.
+
+iex(5)> {_hour,minute,_} = time
+{10, 53, 26}
+
+iex(6)> _hour
+warning: the underscored variable "_hour" is used after being set. A leading underscore indicates that the value of the variable should be ignored. If this is intended please rename the variable to remove the underscore
+└─ iex:6
+
+10
+
+
+Matching usando valor esperado(^):
+iex(7)> nome_esperado = "jose"
+"jose"
+
+iex(8)> {^nome_esperado, idade} = {"joao",30}
+** (MatchError) no match of right hand side value: {"joao", 30}
+    (stdlib 6.1) erl_eval.erl:652: :erl_eval.expr/6
+    iex:8: (file)
+
+
+isso acima é a mesma coisa que fazer:
+
+iex(13)> {"jose", idade} = {"joao",30}
+** (MatchError) no match of right hand side value: {"joao", 30}
+    (stdlib 6.1) erl_eval.erl:652: :erl_eval.expr/6
+    iex:13: (file)
+
+iex(13)> {"joao", idade} = {"joao",30}
+{"joao", 30}
+
+
+
+
+
+3.1.5 Matching lists
+iex(9)> [first, second, third] = [1, 2, 3]
+[1, 2, 3]
+
+iex(10)> first
+1
+
+iex(11)> second
+2
+
+iex(12)> third
+3
+
+
+iex(15)> [head | tail] = [1, 2, 3]
+[1, 2, 3]
+
+iex(16)> head
+1
+
+iex(17)> tail
+[2, 3]
+
+
+
+
+3.1.6 Matching maps
+iex(19)> %{name: name, age: age} = %{name: "Bob", age: 25}
+%{name: "Bob", age: 25}
+
+mas pode ser em qualqer ordem tbm, apenas deve conter as chaves desejadas:
+
+iex(20)> %{age: age, name: name} = %{name: "Bob", age: 25}
+%{name: "Bob", age: 25}
+
+iex(21)> name
+"Bob"
+
+iex(22)> age
+25
+
+Se colocar um nome de chave que não existe:
+iex(23)> %{age: age, names: name} = %{name: "Bob", age: 25}
+** (MatchError) no match of right hand side value: %{name: "Bob", age: 25}
+    (stdlib 6.1) erl_eval.erl:652: :erl_eval.expr/6
+    iex:23: (file)
+
+
+E pode conter tbm apenas as chaves desejadas, não todas do map:
+iex(23)> %{name: name} = %{name: "Bob", age: 25}
+%{name: "Bob", age: 25}
+
+iex(24)> name
+"Bob"
+
+iex(26)> :calendar.local_time()
+{{2024, 10, 25}, {11, 28, 24}}
+
+iex(27)> date_time = {_, {hour, _, _}} = :calendar.local_time()
+{{2024, 10, 25}, {11, 28, 43}}
+
+iex(28)> date_time
+{{2024, 10, 25}, {11, 28, 43}}
+
+iex(29)> hour
+11
+
+
+
+3.2.1 Multiclause functions
+Sao funcoes com multiplos tipo de parametros.
+Seria como a sobrecarga de metodos do java.
+
+Ex.:
+defmodule Geometry do
+  def rectangle_area(a, b) do
+    a * b
+  end
+
+  def square_area(l) do
+    l * l
+  end
+
+  # multi-clause funtions.
+  # "sobrecarga de metodos"
+  def area({:rectangle, a, b}) do
+    a * b
+  end
+
+  def area({:square, a}) do
+    a * a
+  end
+
+  def area({:circle, r}) do
+    r * r * 3.14
+  end
+end
+
+
+Execução:
+iex(2)> Geometry.area({:rectangle, 4, 5})
+20
+
+iex(3)> Geometry.area({:square, 4})
+16
+
+iex(4)> Geometry.area({:circle, 4})
+50.24
+
+Passando um parametro que não da match(:triangle):
+iex(5)> Geometry.area({:triangle, 4})
+** (FunctionClauseError) no function clause matching in Geometry.area/1    
+    
+    The following arguments were given to Geometry.area/1:
+    
+        # 1
+        {:triangle, 4}
+    
+    geometry.ex:12: Geometry.area/1
+    iex:5: (file)
+
+
+
+Colocando uma funcao para tratar o erro:
+defmodule Geometry do
+  def rectangle_area(a, b) do
+    a * b
+  end
+
+  def square_area(l) do
+    l * l
+  end
+
+  # multi-clause funtions.
+  # "sobrecarga de metodos"
+  def area({:rectangle, a, b}) do
+    a * b
+  end
+
+  def area({:square, a}) do
+    a * a
+  end
+
+  def area({:circle, r}) do
+    r * r * 3.14
+  end
+
+  def area(unknown) do
+    {:error, {:unknown_shape, unknown}}
+  end
+end
+
+
+iex(2)> Geometry.area({:triangle, 3,4,5})
+{:error, {:unknown_shape, {:triangle, 3, 4, 5}}}
+
+
+!!! IMPORTANTE !!!
+A ordem das funcoes importam!
+Quando o primeiro match é feito, as demais não são executadas.
+
+
+* 3.2.2 Guards
+Guards são condições definidas na declaração da função.
+
+Ex.:
+defmodule TestNum do
+  def test(x) when x < 0 do
+    :negative
+  end
+
+  def test(x) when x == 0 do
+    :zero
+  end
+
+  def test(x) when x > 0 do
+    :positive
+  end
+end
+
+iex(1)> TestNum.test(-1)
+:negative
+
+iex(2)> TestNum.test(0)
+:zero
+
+iex(3)> TestNum.test(1)
+:positive
+
+
+!!! IMPORTANTE !!!
+iex(4)> TestNum.test("a")
+:positive
+
+Isso ocorre porque se exauriu todas as condições, então é executada a ultima definida, que é a que retorna :positive.
+Para sanar isso, devemos validar se é um número.
+
+defmodule TestNum do
+  def test(x) when is_number(x) and x < 0 do
+    :negative
+  end
+
+  def test(x) when x == 0 do
+    :zero
+  end
+
+  def test(x) when is_number(x) and x > 0 do
+    :positive
+  end
+end
+
+
+iex(1)> TestNum.test("a")
+** (FunctionClauseError) no function clause matching in TestNum.test/1    
+    
+    The following arguments were given to TestNum.test/1:
+    
+        # 1
+        "a"
+    
+    test_num.ex:2: TestNum.test/1
+    iex:1: (file)
+
+
+Condições definidas em guards são limitadas e não podem, por exemplo, chamar funções definidas por você.
+Condições válidas para uso em guards:
+
+- Comparison operators (==, !=, ===, !==, >, <, <=, and >=)
+- Boolean operators (and and or) and negation operators (not and !)
+- Arithmetic operators (+, -, *, and /)
+- Type-check functions from the Kernel module (e.g.,is_number/1, is_atom/1, and so on)
+
+
+
+
+
+* 3.2.3 Multiclause lambdas
+
+test_num = 
+  fn
+    x when is_number(x) and x < 0 -> :negative
+    x when x == 0 -> :zero
+    x when is_number(x) and x > 0 -> :positive
+  end
+
+
+iex(2)> test_num.(1)
+:positive
+iex(3)> test_num.(0)
+:zero
+iex(5)> test_num.(-1)
+:negative
+
+
+3.3.1 Branching with multiclause functions
