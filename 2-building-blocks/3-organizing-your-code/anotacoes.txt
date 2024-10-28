@@ -1536,3 +1536,182 @@ iex(5)> test_num.(-1)
 
 
 3.3.1 Branching with multiclause functions
+
+defmodule TestNum do
+  def test(x) when x < 0, do: :negative
+  def test(0), do: :zero
+  def test(x), do: :positive
+end
+
+Pode definir funcoes em módulos usando a condicao when mas também fazendo o pattern match com o parametro.
+Neste caso acima, se nao satisfazer a condicao (when x < 0) vai tentar a de baixo (0) e então irá para a última.
+
+iex(1)> TestNum2.test(-1)
+:negative
+iex(2)> TestNum2.test(0)
+:zero
+iex(3)> TestNum2.test(1)
+:positive
+iex(4)> TestNum2.test("a")
+
+
+
+Outro exemplo:
+
+defmodule Fact do
+  def fact(0), do: 1
+  def fact(n), do: n * fact(n - 1)
+end
+
+
+
+iex(1)> Fact.fact(0)
+1
+iex(2)> Fact.fact(10)
+3628800
+
+
+* IF-ELSE
+
+Forma 1:
+positive? = fn x -> 
+  if x >= 0 do
+    IO.puts("POSITIVO")
+  else
+    IO.puts("NEGATIVO")
+  end
+end
+
+Forma 2:
+positive? = fn x -> if x >= 0, do: IO.puts("POSITIVO"), else: IO.puts("NEGATIVO") end
+
+
+iex(2)> positive?.(-1)
+NEGATIVO
+:ok
+iex(3)> positive?.(1)
+POSITIVO
+:ok
+iex(4)> positive?.(0)
+POSITIVO
+:ok
+
+
+* UNLESS
+é o mesmo que if not mas com uma sintaxe melhor
+
+Ex.:
+Ao invés de:
+send_email? = fn(status) -> if status != :erro, do: IO.puts("Email sent to abcabc@email.com"), else: IO.puts("Error") end
+
+send_email? = fn(status) -> unless status == :erro, do: IO.puts("Email sent to abcabc@email.com"), else: IO.puts("Error") end
+
+iex(8)> send_email?.(:erro)
+Error
+:ok
+iex(9)> send_email?.(:OK)
+Email sent to abcabc@email.com
+:ok
+
+
+
+* COND (é como se fosse o switch do Java)
+
+grade = fn(x) -> 
+  cond do
+    x >= 9 -> :A
+    x < 9 and x >= 8 -> :B
+    x < 8 and x >= 7 -> :C
+    x < 7 and x >= 6 -> :D
+    true -> :F
+  end
+end
+
+iex(14)> grade.(9.2)
+:A
+iex(15)> grade.(9)
+:A
+iex(16)> grade.(8.5)
+:B
+iex(17)> grade.(7.5)
+:C
+iex(18)> grade.(6.5)
+:D
+iex(19)> grade.(5.5)
+:F
+
+o "true" é como se fosse o "default" usado no switch do Java.
+
+
+* CASE
+Com o case vc define um fluxo para cada condicao do pattern.
+
+Ex.:
+positive? = fn(x) -> 
+  case x >= 0 do
+    :true -> IO.puts("Positive")
+    :false -> IO.puts("Negative")
+  end
+end
+
+
+iex(3)> positive?.(-1)
+Negative
+:ok
+iex(4)> positive?.(0)
+Positive
+:ok
+iex(5)> positive?.(-0)
+Positive
+:ok
+iex(6)> positive?.(-1)
+Negative
+
+
+* WITH
+O with tenta encadear várias operações. Cada passo espera que o valor retornado tenha um padrão esperado. 
+Se todos os padrões forem satisfeitos, o bloco principal é executado. Se um dos padrões falhar, ele "curta-circuita" (interrompe) e 
+devolve o valor que não bateu com o esperado.
+
+Estrutura padrão:
+with padrao1 <- expressao1,
+     padrao2 <- expressao2,
+     padraoN <- expressaoN,
+     do: expressao_final
+else
+  :error -> {:error, "Algo deu errado!"}
+end
+
+
+
+with é uma forma poderosa de encadear várias operações que dependem de padrões.
+Se todas as operações forem bem-sucedidas, o bloco do é executado.
+Se uma operação falhar, o valor que falhou é retornado imediatamente.
+O bloco else pode ser usado para tratar falhas específicas de maneira mais amigável.
+
+
+Exemplo:
+
+defmodule ReadFile do
+  def read_file_content(file_path) do
+    with {:ok, file} <- File.open(file_path),                      tenta abrir o arquivo
+         content when is_binary(content) <- IO.read(file, :eof),   tenta ler o arquivo e verifica se é binário o conteudo
+         :ok <- File.close(file)                                   tenta fechar o arquivo
+         do {:ok, content}                                         retornar :ok e o conteudo
+    else
+      {:error, reason} -> {:error, "Falha: #{reason}"}             em caso de :error retornar {:error, "Falha: motivo_do_erro}
+    end
+  end
+end
+
+
+iex(1)> ReadFile.read_file_content("teste.txt")
+{:ok, "conteudo do arquivo teste.txt"}
+
+iex(2)> ReadFile.read_file_content("arquivo_que_nao_exsite.txt")
+{:error, "Falha: enoent"}
+
+
+
+
+* 3.4 Loops and iterations
