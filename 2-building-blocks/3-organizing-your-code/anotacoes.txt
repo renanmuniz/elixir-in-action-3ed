@@ -1715,3 +1715,137 @@ iex(2)> ReadFile.read_file_content("arquivo_que_nao_exsite.txt")
 
 
 * 3.4 Loops and iterations
+
+-3.4.1 Iterating with recursion
+
+Recursão é a função chamar a si mesma até determinado ponto.
+No caso abaixo, ele se chama até que o pattern matching detecta a chamada a print(1) e encerra.
+Ao encerrar, vai retornando o resultado de cada chamada de forma contrária, como se fosse desempilhando os resultados:
+
+defmodule NaturalNums do
+  def print(1) do
+    IO.puts("Calling print(1)")
+    IO.puts(1)
+  end
+
+  def print(n) do
+    IO.puts("Calling print(#{n})")
+    print(n - 1)
+    IO.puts(n)
+  end
+end
+
+iex(1)> NaturalNums.print(5)
+Calling print(5)
+Calling print(4)
+Calling print(3)
+Calling print(2)
+Calling print(1)
+1
+2
+3
+4
+5
+:ok
+
+
+Essas chamadas em forma de pilha podem levar a um stackoverflow em algumas linguagens.
+Mas em elixir não, pois ela utiliza uma otimização para não ir alocando memória da stack para essas chamadas.
+Ela utiliza o "Tail function calls".
+
+3.4.2 Tail function calls
+
+A tail call recursion é uma forma de fazer a recursão sem alocar memória para cada chamada.
+Desta forma, ao ver que a ultima linha de uma funcao é uma chamada a ela mesma, ela faz essa chamada
+até que chegue na ultima execução. Então vai voltando às chamadas anteriores.
+
+
+defmodule ListHelper do
+  def sum(list) do
+    do_sum(0, list) #exported function. função publica para ser chamada do módulo
+  end
+
+  defp do_sum(current_sum, []) do
+    current_sum #funcao privada que retorna o current_sum quando da o match de ter termiando a lista. Lista vazia [].
+  end
+
+  defp do_sum(current_sum, [head | tail]) do # Funcao privada que faz a soma enquanto a lista não é vazia, chamando ela mesmo passando a lista como tail
+    IO.puts("current_sum = #{current_sum}")  #para ser na proxima iteração dividida como head e tail, somar o head, passar o tail e assim por diante.
+    IO.inspect(head, charlists: :as_lists, label: "HEAD")
+    IO.inspect(tail, charlists: :as_lists, label: "TAIL")
+    new_sum = head + current_sum
+    do_sum(new_sum, tail)
+  end
+end
+
+
+
+
+Praticar:
+1) A list_len/1 function that calculates the length of a list
+
+def len(list) do
+    do_length(0, list)
+  end
+
+  defp do_length(current_size, []) do
+    current_size
+  end
+
+  defp do_length(current_size, [_head | tail]) do
+    size = current_size + 1
+    do_length(size, tail)
+  end
+end
+
+iex(1)> ListHelper.len([1,2,3])
+3
+iex(2)> ListHelper.len(["a","b","c","d","e"])
+5
+
+
+2) A range/2 function that takes two integers, from and to, and returns a list of all integer numbers in the given range.
+
+def range(n1,n2) do
+    IO.inspect(do_range(n1,n2,[]), limit: :infinity)
+  end
+
+  defp do_range(n2, n2, list) do
+    list = [n2 | list]
+    Enum.sort(list)
+  end
+
+  defp do_range(n1,n2,list) do
+    list = [n1 | list]
+    do_range(n1+1,n2,list)
+  end
+end
+
+3) A positive/1 function that takes a list and returns another
+list that contains only the positive numbers from the input list
+
+def positive(list) do
+    do_filter_positives([], list)
+  end
+
+  defp do_filter_positives(positives, []) do
+    positives
+    |> Enum.filter(fn x -> x != nil end)
+    |> Enum.sort()
+  end
+
+  defp do_filter_positives(positives, [head | tail]) do
+    positives = [test(head) | positives]
+    do_filter_positives(positives, tail)
+  end
+
+  defp test(x) when x >= 0 do
+    x
+  end
+
+  defp test(x) when x < 0 do
+    :nil
+  end
+
+
+  3.4.3 Higher-order functions
