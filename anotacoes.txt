@@ -2171,3 +2171,33 @@ Stream.repeatedly(fn -> IO.gets("> ") end)
 4.1 Abstracting with modules
 4.1.1 Basic abstraction
 
+
+* Ver modulo criado todo_list.ex
+
+Testando o módulo todo_list:
+iex(3)> todo_list = TodoList.new() |>
+...(3)> TodoList.add_entry(~D[2024-11-12], "Estudar Elixir") |>
+...(3)> TodoList.add_entry(~D[2024-11-13], "Trabalhar") |>
+...(3)> TodoList.add_entry(~D[2024-11-13], "Preparar para entrevista de amanhã") |>
+...(3)> TodoList.add_entry(~D[2024-11-14], "Entrevista ThoughtWorks")
+%{
+  ~D[2024-11-12] => ["Estudar Elixir"],
+  ~D[2024-11-13] => ["Preparar para entrevista de amanhã", "Trabalhar"],
+  ~D[2024-11-14] => ["Entrevista ThoughtWorks"]
+}
+
+iex(4)> TodoList.entries(todo_list, ~D[2024-11-13])
+["Preparar para entrevista de amanhã", "Trabalhar"]
+
+iex(5)> TodoList.entries(todo_list, ~D[2024-11-14])
+["Entrevista ThoughtWorks"]
+
+iex(6)> TodoList.entries(todo_list, ~D[2024-11-12])
+["Estudar Elixir"]
+
+iex(7)> TodoList.entries(todo_list, ~D[2024-11-15])
+[]
+
+
+
+4.1.2 Composing abstractions
