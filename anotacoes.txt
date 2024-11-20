@@ -2201,3 +2201,307 @@ iex(7)> TodoList.entries(todo_list, ~D[2024-11-15])
 
 
 4.1.2 Composing abstractions
+Assim como na orientação em objetos definimos classes para nossas estruturas de dados,
+tbm podemos fazer aqui usando Módulos.
+
+Exemplo anterior separando a estrutura de dados em um módulo apartado:
+
+Ver módulos: todo_multi_dict.ex e todo_list_multi_dict.ex
+
+iex(1)> c("todo_multi_dict.ex")
+[MultiDict]
+
+iex(2)> c("todo_list_multi_dict.ex")
+[TodoListMultiDict]
+
+iex(3)> todo_list = TodoListMultiDict.new() |>
+...(3)> TodoListMultiDict.add_entry(~D[2024-11-12], "Estudar Elixir") |>
+...(3)> TodoListMultiDict.add_entry(~D[2024-11-13], "Trabalhar") |>
+...(3)> TodoListMultiDict.add_entry(~D[2024-11-13], "Preparar para entrevista de amanhã") |>
+...(3)> TodoListMultiDict.add_entry(~D[2024-11-14], "Entrevista ThoughtWorks")
+
+iex(4)> TodoListMultiDict.entries(todo_list, ~D[2024-11-13])
+["Preparar para entrevista de amanhã", "Trabalhar"]
+
+iex(5)> TodoListMultiDict.entries(todo_list, ~D[2024-11-14])
+["Entrevista ThoughtWorks"]
+
+iex(6)> TodoListMultiDict.entries(todo_list, ~D[2024-11-12])
+["Estudar Elixir"]
+
+iex(7)> TodoListMultiDict.entries(todo_list, ~D[2024-11-15])
+[]
+
+
+
+4.1.3 Structuring data with maps
+Como visto até agora, Maps são estruturas de dados chave valor.
+
+iex(1)> entry= %{date: ~D[2023-12-19], title: "Dentist"}
+%{date: ~D[2023-12-19], title: "Dentist"}
+
+iex(2)> entry.date
+~D[2023-12-19]
+
+iex(3)> entry.title
+"Dentist"
+
+
+Alterando TodoList para que use maps para guardar dados, assim não precisamos modificar
+a assinatura da função para termos novos tipos.
+
+Antes:
+  def add_entry(todo_list, date, title) do
+    MultiDict.add(todo_list, date, title)
+  end
+
+Depois:
+  def add_entry(todo_list, entry) do
+    MultiDict.add(todo_list, entry.date, entry)
+  end
+
+
+Carregando os módulos no iex:
+iex(4)> c("todo_multi_dict.ex")
+[MultiDict]
+
+iex(5)> c("todo_list_multi_dict_with_map.ex")
+[TodoListMultiDictWithMap]
+
+
+Executando:
+iex(8)> todos = TodoListMultiDictWithMap.new() |> 
+...(8)> TodoListMultiDictWithMap.add_entry(%{date: ~D[2024-11-14], title: "Arrumar malas para viagem"})
+
+iex(9)> TodoListMultiDictWithMap.entries(todos, ~D[2024-11-14])
+[%{date: ~D[2024-11-14], title: "Arrumar malas para viagem"}]   #retornou a estrutura toda do mapa.
+
+iex(10)> TodoListMultiDictWithMap.entries(todos, ~D[2024-11-15])
+[]
+
+
+
+# E se agora quisermos adicionar um horario para a tarefa?
+
+iex(11)> todos = TodoListMultiDictWithMap.new() |>
+...(11)> TodoListMultiDictWithMap.add_entry(%{date: ~D[2024-11-14], title: "Entrevista TW", hour: ~T[16:00:00]})
+
+
+iex(12)> TodoListMultiDictWithMap.entries(todos, ~D[2024-11-14])
+[%{date: ~D[2024-11-14], title: "Entrevista TW", hour: ~T[16:00:00]}]
+
+
+Ou seja, armazenando como um mapa, podemos adicionar mais informações sem precisar alterar a função.
+
+Mais um Ex.:
+iex(6)> todos = TodoListMultiDictWithMap.new() |>
+...(6)> TodoListMultiDictWithMap.add_entry(%{date: ~D[2024-11-14], title: "Arrumar as malas"}) |>
+...(6)> TodoListMultiDictWithMap.add_entry(%{date: ~D[2024-11-14], title: "Entrevista TW", hour: ~T[16:00:00]})
+
+
+iex(7)> TodoListMultiDictWithMap.entries(todos, ~D[2024-11-14])
+[
+  %{date: ~D[2024-11-14], title: "Entrevista TW", hour: ~T[16:00:00]},
+  %{date: ~D[2024-11-14], title: "Arrumar as malas"}
+]
+
+O dado armazenado então se torna flexével, em uma tarefa temos uma hora para execução, na outra
+pode ser executado em qualquer momento do dia.
+
+
+
+4.1.4 Abstracting with structs (defstruct)
+Estruturas de dados para representar valores
+Cada módulo pode conter apenas uma
+
+Sintaxe:
+  defstruct a: nil, b: nil
+Em que nill é o default value inicializado.
+
+Internamente uma struct é um tipo de mapa, e seus elementos podem ser acessados indivualmente.
+
+
+defmodule Fraction do
+  defstruct a: nil, b: nil
+
+end
+
+iex(2)> one_half = %Fraction{a: 1, b: 2}
+%Fraction{a: 1, b: 2}
+iex(3)> one_half.a
+1
+iex(4)> one_half.b
+2
+
+
+Pattern Matching Structs:
+Para fazer o pattern matching de structs é só associar o atom à struct desejada:
+
+iex(5)> %Fraction{a: a, b: b} = one_half
+%Fraction{a: 1, b: 2}
+iex(6)> a
+1
+iex(7)> b
+2
+
+
+Adicionando funcionalidades ao modulo fraction:
+
+defmodule Fraction do
+  defstruct a: nil, b: nil
+
+  def new(a, b) do
+    %Fraction{a: a, b: b}
+  end
+
+  def value(%Fraction{a: a, b: b}) do
+    a / b
+  end
+
+  def add(%Fraction{a: a1, b: b1}, %Fraction{a: a2, b: b2}) do
+    new(
+      a1 * b2 + a2 * b1,
+      b2 * b1
+    )
+  end
+end
+
+
+
+O uso de new facilita o uso do modulo, retornando assim a estrutura criada.
+Seria equivalente aos construtores do Java.
+
+iex(10)> one_quarter = Fraction.new(1,4)
+%Fraction{a: 1, b: 4}
+
+iex(11)> Fraction.value(one_quarter)
+0.25
+
+iex(13)> one_half = %Fraction{a: 1, b: 2}
+%Fraction{a: 1, b: 2}
+
+iex(14)> one_quarter = Fraction.new(1,4)
+%Fraction{a: 1, b: 4}
+
+iex(16)> sum = Fraction.add(one_half,one_quarter)
+%Fraction{a: 6, b: 8}
+
+iex(17)> Fraction.value(sum)
+0.75 #6/8 = 0.75
+
+
+
+STRUCTS vs MAPS
+
+Structs não são enumeraveis, então não podem utilizar as funcoes de ENUM:
+iex(3)> one_half = Fraction.new(1, 2)
+%Fraction{a: 1, b: 2}
+
+iex(4)> Enum.to_list(one_half)
+** (Protocol.UndefinedError) protocol Enumerable not implemented for %Fraction{a: 1, b: 2} of type Fraction (a struct)
+    (elixir 1.17.3) lib/enum.ex:1: Enumerable.impl_for!/1
+    (elixir 1.17.3) lib/enum.ex:166: Enumerable.reduce/3
+    (elixir 1.17.3) lib/enum.ex:4423: Enum.reverse/1
+    (elixir 1.17.3) lib/enum.ex:3746: Enum.to_list/1
+    iex:4: (file)
+
+
+Mas structs são maps, então podemos usar funções de Map nelas:
+
+iex(4)> Map.to_list(one_half)
+[a: 1, b: 2, __struct__: Fraction]
+
+
+
+Pode-se então extrair os dados de uma struc em um map:
+
+iex(5)> %{a: a, b: b} = %Fraction{a: 1, b: 2}
+%Fraction{a: 1, b: 2}
+
+iex(6)> a
+1
+
+iex(7)> b
+2
+
+
+INSPECT
+
+Pode usar inspect para "debugar" funcoes:
+
+Sem inspect:
+iex(8)> Fraction.new(1, 4) |>
+...(8)> Fraction.add(Fraction.new(1, 4)) |>
+...(8)> Fraction.add(Fraction.new(1, 2)) |>
+...(8)> Fraction.value()
+1.0
+
+Com inspect:
+iex(9)> Fraction.new(1, 4) |>                 #0,25
+...(9)> IO.inspect() |>
+...(9)> Fraction.add(Fraction.new(1, 4)) |>   #0,25 + 0,25
+...(9)> IO.inspect() |>
+...(9)> Fraction.add(Fraction.new(1, 2)) |>   #0,50 + 0,50
+...(9)> IO.inspect() |>
+...(9)> Fraction.value()                      #1,0
+%Fraction{a: 1, b: 4}
+%Fraction{a: 8, b: 16}
+%Fraction{a: 32, b: 32}
+1.0
+
+
+4.2 Working with hierarchical data
+4.2.1 Generating IDs
+
+Ver código todo_crud.ex
+
+Uso:
+
+iex todo_crud.ex
+
+iex(1)> todo_list = TodoList.new() |>
+  TodoList.add_entry(%{date: ~D[2023-12-19], title: "Dentist"}) |>
+  TodoList.add_entry(%{date: ~D[2023-12-20], title: "Shopping"}) |>
+  TodoList.add_entry(%{date: ~D[2023-12-19], title: "Movies"})
+%TodoList{
+  next_id: 4,
+  entries: %{
+    1 => %{id: 1, date: ~D[2023-12-19], title: "Dentist"},
+    2 => %{id: 2, date: ~D[2023-12-20], title: "Shopping"},
+    3 => %{id: 3, date: ~D[2023-12-19], title: "Movies"}
+  }
+}
+
+iex(2)> updated_todo_list = TodoList.update_title_simple(todo_list, 3, "Theater")
+%TodoList{
+  next_id: 4,
+  entries: %{
+    1 => %{id: 1, date: ~D[2023-12-19], title: "Dentist"},
+    2 => %{id: 2, date: ~D[2023-12-20], title: "Shopping"},
+    3 => %{id: 3, date: ~D[2023-12-19], title: "Theater"}
+  }
+}
+
+iex(3)> updated_todo_list = TodoList.update_date_simple(todo_list, 3, ~D[2023-12-25])
+%TodoList{
+  next_id: 4,
+  entries: %{
+    1 => %{id: 1, date: ~D[2023-12-19], title: "Dentist"},
+    2 => %{id: 2, date: ~D[2023-12-20], title: "Shopping"},
+    3 => %{id: 3, date: ~D[2023-12-25], title: "Movies"}
+  }
+}
+
+iex(4)> updated_todo_list = TodoList.delete_entry(todo_list, 1)
+%TodoList{
+  next_id: 4,
+  entries: %{
+    2 => %{id: 2, date: ~D[2023-12-20], title: "Shopping"},
+    3 => %{id: 3, date: ~D[2023-12-25], title: "Movies"}
+  }
+}
+
+
+
+4.2.4 Iterative updates
+
