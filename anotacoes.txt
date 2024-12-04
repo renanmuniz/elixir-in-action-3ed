@@ -2504,4 +2504,121 @@ iex(4)> updated_todo_list = TodoList.delete_entry(todo_list, 1)
 
 
 4.2.4 Iterative updates
+Até aqui passamos um registro por vez para inserir.
+Agora alterando a função new passamos a receber uma lista de mapa chave valor para inserir(Ver código todo_builder.ex):
 
+def new(entries \\ []) do
+    Enum.reduce(
+      entries,
+      %TodoList{},
+      fn entry, todo_list_acc ->
+        add_entry(todo_list_acc, entry)
+      end
+    )
+end
+
+
+iex(1)> c("todo_builder.ex")
+[TodoList]
+
+iex(2)> entries = [
+...(2)>     %{date: ~D[2023-12-19], title: "Dentist"},
+...(2)>     %{date: ~D[2023-12-20], title: "Shopping"},
+...(2)>     %{date: ~D[2023-12-19], title: "Movies"}
+...(2)> ]
+
+iex(3)> todo_list = TodoList.new(entries)
+%TodoList{
+  next_id: 4,
+  entries: %{
+    1 => %{id: 1, date: ~D[2023-12-19], title: "Dentist"},
+    2 => %{id: 2, date: ~D[2023-12-20], title: "Shopping"},
+    3 => %{id: 3, date: ~D[2023-12-19], title: "Movies"}
+  }
+}
+
+
+
+
+4.3 Polymorphism with protocols
+4.3.1 Protocol basics
+
+A protocol is a module in which you declare functions without
+implementing them.
+The generic logic relies on the protocol and calls its
+functions. Then, you can provide a concrete implementation of the
+protocol for different data types.
+
+Em Java é equivalente a interfaces.
+
+Um exemplo o o módulo Enum, que implmenta suas funções para
+varios tipos de dados:
+
+Enum.each([1, 2, 3], &IO.inspect/1)       Lista
+Enum.each(1..3, &IO.inspect/1)            range
+Enum.each(%{a: 1, b: 2}, &IO.inspect/1)   struct
+
+
+
+4.3.2 Implementing a protocol
+
+Implementando um protocolo e sua implementação:
+# Define the protocol
+defprotocol CustomProtocol do
+  @doc "Convert a value to a custom string"
+  def to_custom_string(value)
+end
+
+# Specific implementation for integers
+defimpl CustomProtocol, for: Integer do
+  def to_custom_string(value) do
+    "Integer: #{value}"
+  end
+end
+
+# Specific implementation for Strings
+defimpl CustomProtocol, for: BitString do
+  def to_custom_string(value) do
+    "String: #{(value)}"
+  end
+end
+
+# Specific implementation for atoms
+defimpl CustomProtocol, for: Atom do
+  def to_custom_string(value) do
+    "Atom: #{Atom.to_string(value)}"
+  end
+end
+
+# Definindo uma implementação para um tipo definido por você:
+defimpl CustomProtocol, for: TodoList do
+  def to_custom_string(value) do
+    "TodoList: #{inspect(value)}"
+  end
+end
+
+
+
+Carregue o módulo todo_list.ex
+c("todo_builder.ex")
+
+IO.puts(CustomProtocol.to_custom_string(123))
+Integer: 123
+:ok
+
+IO.puts(CustomProtocol.to_custom_string("123"))
+String: 123
+:ok
+
+IO.puts(CustomProtocol.to_custom_string(:atom_123))
+Atom: atom_123
+:ok
+
+IO.puts(CustomProtocol.to_custom_string(TodoList.new()))
+TodoList: %TodoList{next_id: 1, entries: %{}}
+:ok
+
+
+Part 2 Concurrent Elixir
+5 Concurrency primitives
+5.2 Working with processes
