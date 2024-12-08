@@ -2622,3 +2622,309 @@ TodoList: %TodoList{next_id: 1, entries: %{}}
 Part 2 Concurrent Elixir
 5 Concurrency primitives
 5.2 Working with processes
+
+
+Simulando uma consulta demorada ao banco de dados:
+run_query = fn query_def ->
+      Process.sleep(2000)
+      "#{query_def} result"
+    end
+
+O terminal fica bloqueado aguardando terminar a execução por 2 segundos:
+iex(2)> run_query.("query 1")
+"query 1 result"
+
+
+Simulando 5 consultas:
+Enum.map(
+  1..5,
+  fn index ->
+    query_def = "query #{index}"
+    run_query.(query_def)
+  end
+)
+
+10 segundos depois... (5 consultas de 2 segundos cada):
+
+["query 1 result", "query 2 result", "query 3 result", "query 4 result",
+ "query 5 result"]
+
+
+5.2.1 Creating processes
+Sintaxe de criar um processo:
+  spawn(fn ->
+    expression_1
+    ...
+    expression_n
+  end)
+
+
+Helper function que executa nossa query assincrona:
+async_query =
+  fn query_def ->
+    spawn(fn ->
+      query_result = run_query.(query_def)
+      IO.puts(query_result)
+    end)
+  end
+
+Agora pode executar que não bloqueia mais o terminal aguardando a execução:
+iex(7)> async_query.("query 1")
+#PID<0.107.0>
+
+iex(8)> async_query.("query 2")
+#PID<0.108.0>
+
+query 1 result
+
+iex(9)> async_query.("query 3")
+#PID<0.109.0>
+
+query 2 result
+
+query 3 result
+
+
+Ao executar um spawn, é retornado o id do processo (#PID<X.X.X>)
+
+
+Executando várias vezes em sequencia:
+Enum.each(1..5, &async_query.("query #{&1}"))
+
+iex(10)> Enum.each(1..5, &async_query.("query #{&1}"))
+:ok
+query 1 result
+query 2 result
+query 3 result
+query 4 result
+query 5 result
+
+Tempo total levou 2 segundos, porque cada chamada da funcao foi executada por um processo distinto.
+
+Esse tipo acima é o fire and forget, porque você dispara a execução e não controla seu término.
+Util quando não se deseja obter nenhum retorno dessa execução.
+
+
+
+
+Agora quando queremos ter um retorno desse processo, utilizamos mensagens:
+5.2.2 Message passing
+
+Message passing é quando voce quer se comunicar com outro processo(thread) e passar uma informação 
+para ser processada.
+
+O tipo de mensagem é qualquer dado que possa ser atribuido a uma variavel.
+
+O esquema de execução é uma fila FIFO (first in - first out) ou seja, as mensagens são executadas em ordem de recebimento pelo processo.
+
+As mensagens são executadas de acordo com o pattern-matching que elas sejam compativeis.
+
+Caso não seja compativel com nenhum definido, ela volta para o final da fila.
+
+Quando todas as mensagens são processadas ou não há nenhuma que atenda mais o patter matching, o processo é encerrado(pode-se definir um tempo de espera)
+
+
+* Um exemplo de como funciona ver no código 5-concurrency/async_example do.ex
+
+
+Exemplo sem pattern-matching:
+
+send(self(), "a message")
+"a message"
+
+receive do
+  message -> IO.inspect(message)
+end
+"a message"
+
+
+Exemplo com pattern-matching:
+
+send(self(), {:warning, "Pode haver registros inconsistentes"})
+send(self(), {:error, "Erro no acesso ao banco de dados"})
+send(self(), {:ok, "Executado com sucesso"})
+
+receive do
+  {:warning, message} -> IO.puts("WARNING: #{message}")
+  {:error, message} -> IO.puts("ERROR: #{message}")
+  {:ok, message} -> IO.puts("SUCCESS: #{message}")
+end
+
+Executando o código acima:
+iex(2)> send(self(), {:error, "Erro no acesso ao banco de dados"})
+{:error, "Erro no acesso ao banco de dados"}
+
+iex(3)> receive do
+...(3)>   {:warning, message} -> IO.puts("WARNING: #{message}")
+...(3)>   {:error, message} -> IO.puts("ERROR: #{message}")
+...(3)>   {:ok, message} -> IO.puts("SUCCESS: #{message}")
+...(3)> end
+ERROR: Erro no acesso ao banco de dados
+:ok
+
+
+A palavra "self()" aqui é o ID do processo ao qual deseja enviar a mensagem.
+Neste caso, estamos enviando ao mesmo processo em que estamos executando o terminal(iex)
+Mas no uso real usa-se o PID
+
+No exemplo acima, não definimos um tempo de término do processo receive.
+Caso deseje, faça assim:
+
+
+receive do
+  {:warning, message} -> IO.puts("WARNING: #{message}")
+  {:error, message} -> IO.puts("ERROR: #{message}")
+  {:ok, message} -> IO.puts("SUCCESS: #{message}")
+after
+  5000 -> IO.puts("Mensagem não recebida")
+end
+
+
+Exemplo passando entre processos diferentes:
+
+Execute o módulo MessageProcessor pegando o PID dele (5-concurrency/message_processor.ex):
+iex(1)> pid = spawn(fn -> MessageProcessor.start() end)
+#PID<0.111.0>
+
+No mesmo terminal, execute a função sendo referenciando o PID acima:
+iex(2)> send(pid, {:warning, "executado mas com avisos"})
+Warning: executado mas com avisos
+iex(3)> send(pid, {:ok, "Executado com sucesso"})
+Success: Executado com sucesso
+
+
+!!! Importante !!!
+Terminais iex não são implicitamente conectados, caso deseje mandar mensagem entre eles deve-se
+formar um nó com eles. (É como se fossem aplicações distintas)
+
+
+'RECEIVE' BEHAVIOR
+To summarize, receive tries to find the first (oldest) message in
+the process mailbox that can be matched against any of the providedpatterns. If such a message is found, the corresponding code is
+executed. Otherwise, receive waits for such a message for a
+specified amount of time or indefinitely if the after clause isn’t
+provided.
+
+
+
+
+
+5.3 Stateful server processes
+
+Spawning processes to perform one-off tasks isn’t the only use case
+for concurrency. In Elixir, it’s common to create long-running
+processes that can serve various requests, sent in the form of
+messages. In addition, such processes may maintain some internal
+state—an arbitrary piece of data that may change over time.
+We call such processes stateful server processes, and they are an
+important concept in Elixir and Erlang systems, so we’ll spend some
+time exploring them.
+
+
+5.3.1 Server processes
+A server process is an informal name for a process that runs for a
+long time (or forever) and can handle various requests (messages).
+To make a process run forever, you must use endless tail recursion.
+
+This can be used to implement a server process. You need to run the
+endless loop and wait for a message in each step of the loop. When
+the message is received, you handle it and then continue the loop.
+
+
+Veja o exemplo "messge_processor.ex":
+defmodule MessageProcessor do
+  def start do
+    # Start the receive loop
+    loop()
+  end
+
+  defp loop do
+    receive do
+      {:warning, message} ->
+        IO.puts("Warning: #{message}")
+        loop() # Continue listening for messages
+
+      {:error, message} ->
+        IO.puts("Error: #{message}")
+        loop() # Continue listening for messages
+
+      {:ok, message} ->
+        IO.puts("Success: #{message}")
+        loop() # Continue listening for messages
+
+      _ ->
+        IO.puts("Unknown message received")
+        loop() # Continue listening for messages
+    end
+  end
+end
+
+A função ao final chama ela mesma "loop()" fazendo o tail recursion.
+
+
+Esse tipo de implementação é o que define esse processo um "server process".
+Essa recursão não gera overhead de CPU visto que a beam coloca esse processo
+em idle enquanto não chega mensagem a ser processada.
+
+
+Curiosidades:
+* Setar o numero de schedulers para usar no iex:
+iex --erl "+S 4"   #4 schedulers (4 threads utilizadas)
+iex --erl "+S 2"   #2 schedulers (2 threads utilizadas)
+
+O resultado você vem no parametro "smp:n:n" abaixo:
+Erlang/OTP 27 [erts-15.1] [source] [64-bit] [smp:4:4] [ds:4:4:10] [async-threads:1] [jit:ns]
+
+
+* Ver o numero de schedulers configurado nessa sesão do iex:
+iex(1)> System.schedulers()
+4
+
+
+!!!!!!!!!!!!!!!
+If you’re running other external services on the system, you could
+consider reducing the number of BEAM scheduler threads. Doing this
+will leave more computational resources for non-BEAM services.
+!!!!!!!!!!!!!!!
+
+Cada processo é executado dividindo seu tempo de CPU com outros, e assim a BEAM vai 
+alternando o contexto executado, sem que ngm fique bloqueado.
+Provando que um processo de longa duração não impacta outros processos:
+
+
+Vamos executar o iex com apenas 1 scheduler:
+iex --erl "+S 1"
+
+Executar uma função infinita e CPU intensive:
+spawn(fn ->
+  Stream.repeatedly(fn -> :rand.uniform() end)
+  |> Stream.run()
+end)
+
+Veremos que o uso de CPU irá a 100% após executar a função acima.
+
+Porém, podemos ver que o terminal não ficou bloqueado e ainda podemos
+fazer mais iperações, ex.:
+Enum.sum(1..1_000_000_000)
+
+
+IEX:
+iex(1)> spawn(fn ->
+...(1)>   Stream.repeatedly(fn -> :rand.uniform() end)
+...(1)>   |> Stream.run()
+...(1)> end)
+#PID<0.106.0>
+
+iex(2)> Enum.sum(1..1_000_000_000)
+500000000500000000
+
+Mesmo se executarmos varias funcoes de uso intensivo de CPU (spawn acima) ainda
+serão todas processadas, dividindo seu tempo daquelo core.
+
+
+Se setarmos mais de uma CPU(iex --erl "+S 4"), então serão dividios entre elas, e veremos mais de uma CPU 
+trabalhando a 100%.
+
+
+
+6 Generic server processes
